@@ -1,11 +1,14 @@
 """Citizen Rights Assistant - backend (Member B, Week 2).
 
 /chat now runs: retrieve -> prompt Phi-3-mini -> answer + citations.
-Retrieval is still the STUB. When Member A's retrieve() is ready, change
-the import below (one line). Refusal threshold and guardrails come in Week 3.
+Uses Member A's retriever from ../retrieval (falls back to the stub, loudly).
+Guards (score threshold, NO_ANSWER check) live in rag.answer_question().
 
 Run:  uvicorn main:app --reload --port 8000
 """
+import sys
+from pathlib import Path
+
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -13,7 +16,15 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from rag import ModelTimeoutError, ModelUnavailableError, answer_question
-from stub_retriever import retrieve  # TODO: swap for Member A's retrieve()
+
+# Member A's real retriever lives in ../retrieval. Fall back to the stub loudly.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "retrieval"))
+try:
+    from retrieve import retrieve
+    print("Using REAL retriever (Member A)")
+except ImportError as exc:
+    from stub_retriever import retrieve
+    print(f"!!! USING STUB RETRIEVER ({exc}) !!!")
 
 app = FastAPI(title="Citizen Rights Assistant API")
 
